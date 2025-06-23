@@ -51,7 +51,7 @@ function ApplyRandomColor() {
 export default function ChannelPage() {
   const [IsConnected, SetConnect] = useState(false);
   const [Messages, SetMessages] = useState<MessageProps[]>([]);
-  const [TTS, SetTTS] = useState(false);
+  const [TTS, SetTTS] = useState(true);
   const ttsRef = useRef(TTS);
   const [autoScroll, SetAutoScroll] = useState(true);
   const params = useParams();
