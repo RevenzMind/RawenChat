@@ -1,36 +1,176 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RawenChat 😺
 
-## Getting Started
+Una experiencia de chat minimalista y elegante para tus transmisiones en vivo de Twitch.
 
-First, run the development server:
+![RawenChat Banner](https://rawenchat.vercel.app/banner.png) <!-- Add a banner image if you have one -->
 
+## ✨ Características
+
+- **Conexión rápida y fácil** a tu canal de Twitch
+- **Soporte para mensajes de texto a voz (TTS)** - Escucha los mensajes del chat
+- **Interfaz limpia y sin distracciones** - Perfecta para overlays
+- **Compatible con OBS** y otras plataformas de transmisión
+- **Fácil uso y sin costo alguno**
+- **Open Source** - Código abierto en GitHub
+- **Modo oscuro/claro** automático
+- **Auto-scroll** configurable
+- **Diseño responsive**
+
+## 🚀 Cómo usar RawenChat
+
+### Método 1: Uso directo (Recomendado)
+
+1. **Visita la aplicación web**: [RawenChat Live](https://rawenchat.vercel.app) <!-- Replace with your actual domain -->
+
+2. **Ingresa tu canal de Twitch**: 
+   - Escribe el nombre de tu canal en el campo de texto
+   - Ejemplo: Si tu canal es `twitch.tv/rawencat`, solo escribe `rawencat`
+
+3. **Haz clic en "Iniciar Chat"**
+
+4. **¡Listo!** Ya puedes ver los mensajes de tu chat en tiempo real
+
+### Método 2: Para uso en OBS
+
+1. **Agrega una nueva fuente** en OBS
+2. **Selecciona "Navegador"**
+3. **Copia la URL**: `https://rawenchat.vercel.app/chat/[tu-canal]/obs?tts=false&render=true`
+   - Reemplaza `[tu-canal]` con el nombre de tu canal
+   - Ejemplo: `https://rawenchat.vercel.app/[tu-canal]/rawencat/obs?tts=false&render=true`
+4. **Configura las dimensiones**:
+5. **Marca "Actualizar navegador cuando la escena se vuelve activa"**
+6. - Abre en tu navegador lo mismo pero `https://rawenchat.vercel.app/[tu-canal]/rawencat/obs?tts=true&render=false`
+- Esto hara que el navegador te diga el chat, y el obs lo renderize
+
+## 🛠️ Instalación para desarrollo
+
+Si quieres ejecutar RawenChat localmente o contribuir al proyecto:
+
+### Prerrequisitos
+
+- Node.js
+- pnpm 
+
+### Pasos
+
+1. **Clona el repositorio**:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/RevenzMind/RawenChat.git
+cd RawenChat
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Instala las dependencias**:
+```bash
+# Con pnpm (recomendado)
+pnpm install
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. **Ejecuta en modo desarrollo**:
+```bash
+# Con pnpm
+pnpm dev
 
-## Learn More
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. **Abre tu navegador** en `http://localhost:3000`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Scripts disponibles
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev     # Ejecuta en modo desarrollo con Turbopack
+npm run build   # Construye la aplicación para producción
+npm run start   # Inicia el servidor de producción
+npm run lint    # Ejecuta el linter
+```
 
-## Deploy on Vercel
+## 📁 Estructura del proyecto
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/
+│   ├── chat/[channel]/
+│   │   ├── obs/
+│   │   │   └── page.tsx          # Vista optimizada para OBS
+│   │   └── page.tsx              # Vista principal del chat
+│   ├── components/
+│   │   ├── chat/
+│   │   │   └── messagesRender.tsx # Renderizado de mensajes
+│   │   └── header.tsx            # Componente del header
+│   ├── favicon.ico/
+│   │   └── route.ts              # Favicon dinámico
+│   ├── globals.css               # Estilos globales
+│   ├── layout.tsx                # Layout principal
+│   └── page.tsx                  # Página de inicio
+public/                           # Archivos estáticos
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ⚙️ Configuración
+
+### Funciones disponibles
+
+- **TTS (Text-to-Speech)**: Activa/desactiva la lectura de mensajes
+- **Auto Scroll**: El chat se desplaza automáticamente con nuevos mensajes
+- **Modo OBS**: Vista optimizada para overlays sin controles
+
+### Para streamers
+
+Para usar RawenChat en tu stream:
+
+1. **URL para overlay**: `https://rawenchat.vercel.app/[tu-canal]/rawencat/obs?tts=aflse&render=true`
+2. **Dimensiones recomendadas**: 300x600px
+3. **Posición**: Lateral derecho o izquierdo de la pantalla
+
+## 🤝 Contribuir
+
+¡Las contribuciones son bienvenidas! Si quieres mejorar RawenChat:
+
+1. **Fork** el repositorio
+2. **Crea una rama** para tu feature (`git checkout -b feature/AmazingFeature`)
+3. **Commit** tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. **Push** a la rama (`git push origin feature/AmazingFeature`)
+5. **Abre un Pull Request**
+
+## 📝 Tecnologías utilizadas
+
+- **[Next.js 15](https://nextjs.org/)** - Framework de React
+- **[React 19](https://react.dev/)** - Biblioteca de UI
+- **[TypeScript](https://www.typescriptlang.org/)** - Tipado estático
+- **[Tailwind CSS](https://tailwindcss.com/)** - Framework de CSS
+- **[tmi.js](https://github.com/tmijs/tmi.js)** - Cliente de Twitch IRC
+- **[@lobehub/fluent-emoji](https://github.com/lobehub/lobe-ui)** - Emojis animados
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
+
+## 🐛 Reportar bugs
+
+Si encuentras algún problema:
+
+1. **Revisa** si el issue ya existe en [GitHub Issues](https://github.com/RevenzMind/RawenChat/issues)
+2. **Crea un nuevo issue** con:
+   - Descripción detallada del problema
+   - Pasos para reproducirlo
+   - Screenshots si es necesario
+   - Información del navegador/OS
+
+## 💖 Apoya el proyecto
+
+Si RawenChat te ha sido útil:
+
+- ⭐ **Dale una estrella** al repositorio
+- 🐛 **Reporta bugs** que encuentres
+- 💡 **Sugiere nuevas características**
+- 🤝 **Contribuye** con código
+- 📢 **Comparte** el proyecto con otros streamers
+
+## 📞 Contacto
+
+- **GitHub**: [@RevenzMind](https://github.com/RevenzMind)
+- **Twitch**: [@rawencat](https://twitch.tv/rawencat) <!-- Add your Twitch channel -->
+- **Twitter**: [@tu_twitter] <!-- Add your Twitter -->
+
+---
+
+**¿Te gusta RawenChat?** ¡Dale una ⭐ al repositorio y compártelo con otros streamers!
