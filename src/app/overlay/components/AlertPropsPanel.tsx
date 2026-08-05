@@ -1,23 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import type { AlertEventKind, WidgetPanelProps } from "@/types/overlay";
+import type { OverlayAsset, OverlayWidget } from "@/types/overlay";
 import { ALERT_EVENT_LABELS, DEFAULT_ALERT_TEMPLATES, sanitizeAlertData, sendTestAlert } from "@/utils/alerts";
 import { getAssetById } from "@/utils/overlay";
+import { useOverlayEditorStore } from "../useOverlayEditorStore";
 import { useSessionPlatform } from "@/hooks";
-import { useOverlayEditorStore } from "@/app/overlay/useOverlayEditorStore";
+import type { AlertEventKind } from "@/types/overlay";
 import Dropdown from "@/app/components/global/Dropdown";
-import { AssetPickerButton, AssetPickerPopup, Btn, NumberField, PanelDivider, PropSection } from "@/app/components/ui";
-import Field from "@/app/components/ui/Field";
+import { AssetPickerButton } from "./AssetPickerButton";
+import { AssetPickerPopup } from "./AssetPickerPopup";
+import { Btn, Field, PanelDivider, PropSection } from "./ui-primitives";
+import { NumberField } from "./NumberField";
 
-function Row({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-2 gap-1.5">{children}</div>;
-}
-
-export function AlertPanel({ widget, upW, visualAssets, audioAssets }: WidgetPanelProps<"alert">) {
+export function AlertPropsPanel({
+  w,
+  upW,
+  visualAssets,
+  audioAssets,
+}: {
+  w: Extract<OverlayWidget, { kind: "alert" }>;
+  upW: (fn: (w: OverlayWidget) => OverlayWidget) => void;
+  visualAssets: OverlayAsset[];
+  audioAssets: OverlayAsset[];
+}) {
   const sessionPlatform = useSessionPlatform();
-  // Sanitizado: widgets viejos no traen events/templates y tronaría el panel
-  const data = sanitizeAlertData(widget.data);
+  const data = sanitizeAlertData(w.data);
   const { scene } = useOverlayEditorStore();
   const [picker, setPicker] = useState<null | "media" | "sound">(null);
   const mediaAsset = data.mediaAssetId ? getAssetById(scene, data.mediaAssetId) : undefined;
@@ -26,7 +34,8 @@ export function AlertPanel({ widget, upW, visualAssets, audioAssets }: WidgetPan
     upW((v) => (v.kind === "alert" ? { ...v, data: { ...v.data, ...patch } } : v));
   const kinds = Object.keys(ALERT_EVENT_LABELS) as AlertEventKind[];
   const mediaOptions = visualAssets.filter((a) =>
-    data.mediaKind === "video" ? a.kind === "video" : a.kind === "image" || a.kind === "gif");
+    data.mediaKind === "video" ? a.kind === "video" : a.kind === "image" || a.kind === "gif",
+  );
 
   return (
     <>
@@ -44,8 +53,12 @@ export function AlertPanel({ widget, upW, visualAssets, audioAssets }: WidgetPan
           {kinds.map((kind) => (
             <div key={kind} className="flex items-center gap-2">
               <label className="flex-1 min-w-0 flex items-center gap-2 cursor-pointer text-xs text-[var(--text-secondary)]">
-                <input type="checkbox" className="rawen-checkbox" checked={data.events[kind] ?? true}
-                  onChange={(e) => upData({ events: { ...data.events, [kind]: e.target.checked } })} />
+                <input
+                  type="checkbox"
+                  className="rawen-checkbox"
+                  checked={data.events[kind] ?? true}
+                  onChange={(e) => upData({ events: { ...data.events, [kind]: e.target.checked } })}
+                />
                 {ALERT_EVENT_LABELS[kind]}
               </label>
               <Btn onClick={() => void sendTestAlert(kind)}>Probar</Btn>
@@ -58,20 +71,31 @@ export function AlertPanel({ widget, upW, visualAssets, audioAssets }: WidgetPan
       <PropSection title="Mensaje">
         {kinds.map((kind) => (
           <Field key={kind} label={ALERT_EVENT_LABELS[kind]}>
-            <input className="amoled-input !py-1 text-xs" value={data.templates[kind] ?? DEFAULT_ALERT_TEMPLATES[kind]}
-              onChange={(e) => upData({ templates: { ...data.templates, [kind]: e.target.value } })} />
+            <input
+              className="amoled-input !py-1 text-xs"
+              value={data.templates[kind] ?? DEFAULT_ALERT_TEMPLATES[kind]}
+              onChange={(e) => upData({ templates: { ...data.templates, [kind]: e.target.value } })}
+            />
           </Field>
         ))}
         <div className="text-[10px] text-[var(--text-muted)] px-1">Marcadores: {"{user}"} y {"{count}"}</div>
         <label className="flex items-center gap-2 cursor-pointer text-xs text-[var(--text-secondary)]">
-          <input type="checkbox" className="rawen-checkbox" checked={data.ttsEnabled}
-            onChange={(e) => upData({ ttsEnabled: e.target.checked })} />
+          <input
+            type="checkbox"
+            className="rawen-checkbox"
+            checked={data.ttsEnabled}
+            onChange={(e) => upData({ ttsEnabled: e.target.checked })}
+          />
           Leer en voz alta (TTS)
         </label>
         {data.ttsEnabled && (
           <label className="flex items-center gap-2 cursor-pointer text-xs text-[var(--text-secondary)] pl-5">
-            <input type="checkbox" className="rawen-checkbox" checked={data.ttsAfterSound}
-              onChange={(e) => upData({ ttsAfterSound: e.target.checked })} />
+            <input
+              type="checkbox"
+              className="rawen-checkbox"
+              checked={data.ttsAfterSound}
+              onChange={(e) => upData({ ttsAfterSound: e.target.checked })}
+            />
             Leer después del sonido
           </label>
         )}
@@ -80,10 +104,16 @@ export function AlertPanel({ widget, upW, visualAssets, audioAssets }: WidgetPan
       <PanelDivider />
       <PropSection title="Media y sonido">
         <Field label="Tipo de media">
-          <Dropdown compact
-            options={[{ value: "none", label: "Ninguna" }, { value: "image", label: "Imagen / GIF" }, { value: "video", label: "Video" }]}
+          <Dropdown
+            compact
+            options={[
+              { value: "none", label: "Ninguna" },
+              { value: "image", label: "Imagen / GIF" },
+              { value: "video", label: "Video" },
+            ]}
             value={data.mediaKind}
-            onChange={(value) => upData({ mediaKind: value as "none" | "image" | "video", mediaAssetId: null })} />
+            onChange={(value) => upData({ mediaKind: value as "none" | "image" | "video", mediaAssetId: null })}
+          />
         </Field>
         {data.mediaKind !== "none" && (
           <Field label="Asset">
@@ -94,24 +124,36 @@ export function AlertPanel({ widget, upW, visualAssets, audioAssets }: WidgetPan
           <AssetPickerButton asset={soundAsset} placeholder="Ninguno — elegir…" onClick={() => setPicker("sound")} />
         </Field>
         <Field label={`Volumen ${data.soundVolume}%`}>
-          <input type="range" min={0} max={100} className="w-full accent-[var(--accent)]" value={data.soundVolume}
-            onChange={(e) => upData({ soundVolume: Number(e.target.value) })} />
+          <input
+            type="range"
+            min={0}
+            max={100}
+            className="w-full accent-[var(--accent)]"
+            value={data.soundVolume}
+            onChange={(e) => upData({ soundVolume: Number(e.target.value) })}
+          />
         </Field>
       </PropSection>
 
       <PanelDivider />
       <PropSection title="Aparición">
-        <Row>
+        <div className="grid grid-cols-2 gap-1.5">
           <Field label="Texto">
-            <Dropdown compact
-              options={[{ value: "bottom", label: "Abajo" }, { value: "top", label: "Arriba" }, { value: "center", label: "Centrado" }]}
+            <Dropdown
+              compact
+              options={[
+                { value: "bottom", label: "Abajo" },
+                { value: "top", label: "Arriba" },
+                { value: "center", label: "Centrado" },
+              ]}
               value={data.textPosition}
-              onChange={(value) => upData({ textPosition: value as "bottom" | "top" | "center" })} />
+              onChange={(value) => upData({ textPosition: value as "bottom" | "top" | "center" })}
+            />
           </Field>
           <Field label="Duración s">
             <NumberField min={2} value={data.duration} onChange={(v) => upData({ duration: v })} />
           </Field>
-        </Row>
+        </div>
       </PropSection>
 
       {picker === "media" && (
@@ -121,7 +163,8 @@ export function AlertPanel({ widget, upW, visualAssets, audioAssets }: WidgetPan
           assets={mediaOptions}
           value={data.mediaAssetId}
           onPick={(id) => upData({ mediaAssetId: id })}
-          onClose={() => setPicker(null)} />
+          onClose={() => setPicker(null)}
+        />
       )}
       {picker === "sound" && (
         <AssetPickerPopup
@@ -130,7 +173,8 @@ export function AlertPanel({ widget, upW, visualAssets, audioAssets }: WidgetPan
           assets={audioAssets}
           value={data.soundAssetId}
           onPick={(id) => upData({ soundAssetId: id })}
-          onClose={() => setPicker(null)} />
+          onClose={() => setPicker(null)}
+        />
       )}
     </>
   );

@@ -19,7 +19,7 @@ export const alertDefinition: WidgetDefinition = {
     mediaAssetId: null,
     soundAssetId: null,
     soundVolume: 80,
-    soundInEditor: false,
+
     ttsEnabled: true,
     ttsAfterSound: true,
     textPosition: "bottom",

@@ -66,12 +66,10 @@ export function AlertView({ scene, widget, interactive }: WidgetViewProps<"alert
     return () => window.clearInterval(t);
   }, [interactive, enabledKindsKey]);
 
-  // Sonido solo con alertas reales/de prueba, no con el preview rotativo.
-  // La página live (OBS) siempre suena; el preview del editor solo si está
-  // activado, si no el usuario escucha todo duplicado.
+  // Sonido solo en la app (canvas interactivo); el overlay de OBS no reproduce sonido.
   useEffect(() => {
     if (!current) return;
-    if (interactive && !dataRef.current.soundInEditor) return;
+    if (!interactive) return;   // OBS overlay: nunca suena
     if (!claimAlertSound(current)) return;
     const sound = getAssetById(scene, dataRef.current.soundAssetId);
     if (!sound) return;

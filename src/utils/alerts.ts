@@ -70,7 +70,6 @@ export function sanitizeAlertData(raw: Partial<AlertWidgetData> | null | undefin
     mediaAssetId: typeof src.mediaAssetId === "string" ? src.mediaAssetId : null,
     soundAssetId: typeof src.soundAssetId === "string" ? src.soundAssetId : null,
     soundVolume: typeof src.soundVolume === "number" ? src.soundVolume : 80,
-    soundInEditor: Boolean(src.soundInEditor),
     ttsEnabled: Boolean(src.ttsEnabled),
     ttsAfterSound: src.ttsAfterSound !== false,
     textPosition: src.textPosition === "top" || src.textPosition === "center" ? src.textPosition : "bottom",

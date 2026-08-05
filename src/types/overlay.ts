@@ -75,8 +75,6 @@ export interface AlertWidget extends OverlayWidgetBase {
     mediaAssetId: string | null;
     soundAssetId: string | null;
     soundVolume: number;
-    /** El preview del editor también reproduce el sonido (OBS siempre suena) */
-    soundInEditor: boolean;
     ttsEnabled: boolean;
     /** Esperar a que termine el sonido antes de leer el TTS */
     ttsAfterSound: boolean;

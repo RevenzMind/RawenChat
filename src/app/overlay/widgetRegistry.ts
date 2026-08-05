@@ -188,7 +188,7 @@ export const WIDGET_REGISTRY: Record<OverlayWidgetKind, WidgetDefinition> = {
       mediaAssetId: null,
       soundAssetId: null,
       soundVolume: 80,
-      soundInEditor: false,
+
       ttsEnabled: true,
       ttsAfterSound: true,
       textPosition: "bottom",
