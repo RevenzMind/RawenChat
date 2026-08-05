@@ -4,13 +4,11 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import * as tmi from "tmi.js";
 import { useSearchParams } from "next/navigation";
 import { getKickChatroomId, getKickWebSocketUrl } from "@/utils/kick";
+import { buildKickParts, buildTwitchParts, type ChatMessagePart } from "@/utils/emotes";
 import { type ChatPlatform } from "@/utils/platform";
 import { STORAGE_KEYS } from "@/constants/config";
 import { getFromStorage } from "@/utils/storage";
-import {
-  useCustomMessageComponent,
-  DEFAULT_COMPONENT_CODE,
-} from "@/app/hooks/useCustomMessageComponent";
+import { useCustomMessageComponent, DEFAULT_COMPONENT_CODE } from "@/hooks";
 import { TailwindRuntimeLoader } from "@/app/components/shared/TailwindRuntimeLoader";
 
 interface MessageProps {
@@ -18,6 +16,7 @@ interface MessageProps {
   username: string | undefined;
   message: string;
   color?: string | undefined;
+  parts?: ChatMessagePart[];
 }
 
 const REMOTE_COMPONENT_URL = "http://127.0.0.1:3003/obs-component";
@@ -70,7 +69,13 @@ function useTwitchChat(channel: string | null, onMessage: (msg: MessageProps) =>
   useEffect(() => {
     if (!channel) return;
 
-    const client = new tmi.Client({ channels: [channel.toLowerCase()] });
+    const client = new tmi.Client({
+      connection: {
+        secure: true,
+        reconnect: true,
+      },
+      channels: [channel.toLowerCase()],
+    });
 
     client
       .connect()
@@ -84,6 +89,7 @@ function useTwitchChat(channel: string | null, onMessage: (msg: MessageProps) =>
         username: tags.username,
         message,
         color: tags.color || undefined,
+        parts: buildTwitchParts(message, tags.emotes),
       });
     });
 
@@ -137,6 +143,7 @@ function useKickChat(channel: string | null, onMessage: (msg: MessageProps) => v
               timestamp: new Date().toISOString(),
               username: data.sender?.username || data.sender?.slug || "kick_user",
               message: data.content,
+              parts: buildKickParts(data.content),
             });
           } catch (err) {
             console.error("Failed to parse Kick WebSocket message:", err);
@@ -159,6 +166,8 @@ function ObsPageContent() {
 
   const channel = searchParams.get("channel");
   const platform = (searchParams.get("platform") || "twitch").toLowerCase() as ChatPlatform;
+  // Optional base64-encoded custom message component code passed by the overlay editor
+  const codeParam = searchParams.get("code");
 
   useEffect(() => {
     if (!channel) {
@@ -166,7 +175,11 @@ function ObsPageContent() {
     }
   }, [channel]);
 
-  const componentCode = useRemoteComponentCode();
+  const remoteCode = useRemoteComponentCode();
+  // URL param wins over remote code when present
+  const componentCode = codeParam
+    ? (() => { try { return atob(codeParam); } catch { return remoteCode; } })()
+    : remoteCode;
   const MessageComponent = useCustomMessageComponent(componentCode);
 
   const appendMessage = (msg: MessageProps) => setMessages((prev) => [...prev, msg]);

@@ -1,10 +1,10 @@
 import { app } from "electron";
-import { setupSingleInstanceLock } from "./single-instance";
-import { startStaticServer } from "./static-server";
-import { startAvatarWebSocketServer, startAvatarHttpServer } from "./avatar-server";
-import { createWindow, getMainWindow } from "./window";
-import { registerIpcHandlers } from "./ipc-handlers";
-import { setupAutoUpdater } from "./auto-updater";
+import { setupSingleInstanceLock } from "./core/single-instance";
+import { startStaticServer } from "./services/static-server";
+import { startBridgeSocketServer, startBridgeHttpServer } from "./services/bridge-server";
+import { createWindow, getMainWindow } from "./core/window";
+import { registerIpcHandlers } from "./core/ipc";
+import { setupAutoUpdater } from "./core/updater";
 
 const isDev = !app.isPackaged;
 
@@ -20,10 +20,10 @@ if (gotTheLock) {
     }
 
     try {
-      startAvatarWebSocketServer();
-      startAvatarHttpServer();
+      startBridgeSocketServer();
+      startBridgeHttpServer();
     } catch (err) {
-      console.error("Error crítico al levantar servicios del avatar:", err);
+      console.error("Error al levantar los servicios locales:", err);
     }
 
     createWindow();

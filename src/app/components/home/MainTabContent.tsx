@@ -11,6 +11,7 @@ interface MainTabContentProps {
   activeTab: SidebarTab;
   channel: string;
   commands: Command[];
+  commandVolume: number;
   isConnected: boolean;
   messages: MessageProps[];
   platform: ChatPlatform;
@@ -22,14 +23,13 @@ export default function MainTabContent({
   activeTab,
   channel,
   commands,
+  commandVolume,
   isConnected,
   messages,
   platform,
   setCommands,
   setToastMessage,
 }: MainTabContentProps) {
-
-  
   return (
     <>
       <div key={activeTab} className="flex-1 flex flex-col min-h-0 animate-tab-enter">
@@ -39,11 +39,12 @@ export default function MainTabContent({
           <CommandsPanel
             commands={commands}
             setCommands={setCommands}
+            commandVolume={commandVolume}
             isLocked={false}
             platform={platform}
           />
         ) : (
-          <Avatar setToastMessage={setToastMessage} />
+          <Avatar />
         )}
       </div>
 

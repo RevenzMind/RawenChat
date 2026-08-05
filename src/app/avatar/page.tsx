@@ -6,7 +6,7 @@ import {
   readAvatarImage,
   readAvatarSettingsFromOverlayServer,
 } from '@/utils/avatar';
-import { useAvatarSocketReceiver } from '../hooks/useAvatarSocketReceiver';
+import { useAvatarSocketReceiver } from '@/hooks';
 
 export default function AvatarPage() {
   const [idleImg, setIdleImg] = useState<string>(AVATAR_DEFAULTS.IDLE_IMAGE);

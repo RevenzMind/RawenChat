@@ -1,17 +1,22 @@
 "use client";
-import { useState, useRef } from "react";
-import {
-  Keyboard20Filled,
-  Joystick20Filled,
-  Speaker020Regular,
-  Dismiss20Regular,
-  Play20Regular,
-  Delete20Regular,
-} from "@fluentui/react-icons";
+
+import { useState, useRef, useCallback } from "react";
 import { isValidKey } from "@/constants/validation";
 import { DEFAULTS } from "@/constants/config";
 import { getPlatformDisplayName, type ChatPlatform } from "@/utils/platform";
-import Dropdown from "@/app/components/global/Dropdown";
+import {
+  ActionGlyph,
+  ClockIcon,
+  PencilIcon,
+  PlayIcon,
+  PlusIcon,
+  TerminalIcon,
+  TrashIcon,
+  VolumeIcon,
+  XIcon,
+  commandIdentity,
+  CommandCard,
+} from "./commands";
 
 export interface Command {
   id: string;
@@ -27,6 +32,7 @@ export interface Command {
 interface CommandsPanelProps {
   commands: Command[];
   setCommands: (commands: Command[]) => void;
+  commandVolume: number;
   isLocked?: boolean;
   platform?: ChatPlatform;
 }
@@ -41,9 +47,38 @@ const EMPTY_COMMAND: Omit<Command, "id"> = {
   rateLimitType: "per-user",
 };
 
+const ACTION_TYPES: { value: "key" | "sound" | "both"; label: string; hint: string }[] = [
+  { value: "key", label: "Tecla", hint: "Presiona una tecla" },
+  { value: "sound", label: "Sonido", hint: "Reproduce un audio" },
+  { value: "both", label: "Ambos", hint: "Tecla y audio" },
+];
+
+const inputCls =
+  "h-10 w-full rounded-lg border border-white/10 bg-white/[0.03] px-3.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none transition-colors focus:border-[var(--accent-border)] focus:bg-white/[0.05] focus:ring-2 focus:ring-[var(--accent-muted)]";
+
+const btnPrimary =
+  "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-[#1c1108] transition hover:brightness-110 disabled:pointer-events-none disabled:opacity-40";
+
+const btnGhost =
+  "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-3.5 text-sm font-medium text-zinc-400 transition-colors hover:bg-white/5 hover:text-zinc-100";
+
+function FieldLabel({ children, hint }: { children: React.ReactNode; hint?: string }) {
+  return (
+    <div className="flex items-baseline justify-between">
+      <span className="text-[13px] font-medium text-zinc-200">{children}</span>
+      {hint && <span className="text-[11px] text-zinc-500">{hint}</span>}
+    </div>
+  );
+}
+
+function FieldError({ children }: { children: React.ReactNode }) {
+  return <span className="block mt-1.5 text-xs text-red-400">{children}</span>;
+}
+
 export default function CommandsPanel({
   commands,
   setCommands,
+  commandVolume,
   isLocked = false,
   platform = "twitch",
 }: CommandsPanelProps) {
@@ -59,7 +94,7 @@ export default function CommandsPanel({
 
   const actionType = form.actionType || "key";
 
-  function startAdd() {
+  const startAdd = useCallback(() => {
     setEditing({ id: "", ...EMPTY_COMMAND });
     setForm(EMPTY_COMMAND);
     setTimeoutMinutes(0);
@@ -68,9 +103,9 @@ export default function CommandsPanel({
     setAudioBlob(null);
     setErrors({});
     setIsModalOpen(true);
-  }
+  }, []);
 
-  function startEdit(cmd: Command) {
+  const startEdit = useCallback((cmd: Command) => {
     const totalMs = cmd.timeout || DEFAULTS.COMMAND_TIMEOUT_MS;
     const mins = Math.floor(totalMs / 60000);
     const secs = Math.floor((totalMs % 60000) / 1000);
@@ -90,15 +125,26 @@ export default function CommandsPanel({
     setAudioBlob(null);
     setErrors({});
     setIsModalOpen(true);
-  }
+  }, []);
 
-  function closeModal() {
+  const closeModal = useCallback(() => {
     setIsModalOpen(false);
     setEditing(null);
     setSelectedFileName("");
     setAudioBlob(null);
     setErrors({});
-  }
+  }, []);
+
+  const handleTestSound = useCallback((soundFile?: string) => {
+    if (!soundFile) return;
+    try {
+      const audio = new Audio(soundFile.startsWith("data:") ? soundFile : `/${soundFile}`);
+      audio.volume = commandVolume / 100;
+      audio.play().catch(console.error);
+    } catch (e) {
+      console.error("Audio playback error:", e);
+    }
+  }, [commandVolume]);
 
   function validate(): boolean {
     const errs: Record<string, string> = {};
@@ -112,8 +158,7 @@ export default function CommandsPanel({
       if (!form.key.trim()) {
         errs.key = "La tecla es requerida.";
       } else if (!isValidKey(form.key)) {
-        errs.key =
-          "Tecla inválida. Usa letras, números o: space, enter, escape, f1-f12, arrows";
+        errs.key = "Tecla inválida. Usa letras, números o: space, enter, escape, f1-f12, arrows";
       }
     }
     setErrors(errs);
@@ -130,9 +175,8 @@ export default function CommandsPanel({
     if (!validate()) return;
     const totalTimeoutMs = timeoutMinutes * 60000 + timeoutSeconds * 1000;
     const normalizedKey =
-      actionType === "key" || actionType === "both"
-        ? form.key.trim().toLowerCase()
-        : "";
+      actionType === "key" || actionType === "both" ? form.key.trim().toLowerCase() : "";
+
     if (audioBlob) {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -149,7 +193,7 @@ export default function CommandsPanel({
                     key: normalizedKey,
                     rateLimitType: form.rateLimitType || "per-user",
                   }
-                : c,
+                : c
             )
           : [
               ...commands,
@@ -182,7 +226,7 @@ export default function CommandsPanel({
                 key: normalizedKey,
                 rateLimitType: form.rateLimitType || "per-user",
               }
-            : c,
+            : c
         )
       : [
           ...commands,
@@ -200,26 +244,30 @@ export default function CommandsPanel({
     closeModal();
   }
 
-  function remove(id: string) {
-    setCommands(commands.filter((c) => c.id !== id));
-  }
+  const remove = useCallback(
+    (id: string) => {
+      setCommands(commands.filter((c) => c.id !== id));
+    },
+    [commands, setCommands]
+  );
 
   function playAudio() {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
-    
+
     let audioSrc = "";
     if (audioBlob) {
       audioSrc = URL.createObjectURL(audioBlob);
     } else if (form.soundFile) {
       audioSrc = form.soundFile;
     }
-    
+
     if (audioSrc) {
       audioRef.current = new Audio(audioSrc);
-      audioRef.current.play().catch(err => console.error("Error playing audio:", err));
+      audioRef.current.volume = commandVolume / 100;
+      audioRef.current.play().catch((err) => console.error("Error playing audio:", err));
     }
   }
 
@@ -233,143 +281,124 @@ export default function CommandsPanel({
 
   return (
     <>
-      <div className="h-full overflow-y-auto rawen-scrollbar px-4 py-4 flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[var(--text-secondary)] text-sm flex-1">
-            {isLocked
-              ? "Conecta un canal para crear comandos."
-              : `Automatiza acciones cuando alguien escriba un comando en ${getPlatformDisplayName(platform)}.`}
-          </p>
-          <button
-            onClick={startAdd}
-            disabled={isLocked}
-            className={`amoled-button shrink-0 px-4 py-2 text-sm ${isLocked ? "opacity-40 cursor-not-allowed" : ""}`}
-          >
-            + Nuevo comando
-          </button>
-        </div>
-
-        {commands.length === 0 && (
-          <div className="flex flex-col items-center justify-center flex-1 gap-3 text-[var(--text-muted)] min-h-[200px]">
-            <div className="w-12 h-12 rounded-xl bg-[var(--elevated)] border border-[var(--border)] flex items-center justify-center">
-              <Joystick20Filled className="w-6 h-6" />
+      <div className="h-full overflow-y-auto rawen-scrollbar px-6 py-6">
+        <div className="mx-auto max-w-3xl flex flex-col gap-8">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold text-zinc-100">Comandos</h2>
+              <p className="mt-1 text-[13px] text-zinc-500">
+                {isLocked
+                  ? "Conecta un canal para crear comandos."
+                  : `Acciones automáticas cuando alguien escribe un comando en ${getPlatformDisplayName(platform)}.`}
+              </p>
             </div>
-            <p className="text-sm">Sin comandos. Crea el primero con el botón de arriba.</p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 gap-3">
-          {commands.map((cmd) => (
-            <div
-              key={cmd.id}
-              className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 flex items-center justify-between gap-4 hover:border-[var(--accent-border)] transition-all"
+            <button
+              type="button"
+              onClick={startAdd}
+              disabled={isLocked}
+              className={`${btnPrimary} shrink-0`}
             >
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="w-10 h-10 bg-[var(--accent-muted)] border border-[var(--accent-border)] rounded-lg flex items-center justify-center shrink-0">
-                  {cmd.actionType === "key" && <Keyboard20Filled className="w-5 h-5 text-[var(--accent)]" />}
-                  {cmd.actionType === "sound" && <Speaker020Regular className="w-5 h-5 text-[var(--accent)]" />}
-                  {cmd.actionType === "both" && <div className="flex items-center gap-0.5"><Keyboard20Filled className="w-4 h-4 text-[var(--accent)]" /><Speaker020Regular className="w-4 h-4 text-[var(--accent)]" /></div>}
-                </div>
-                <div className="flex flex-col min-w-0 gap-0.5">
-                  <span className="font-semibold text-white text-sm truncate">
-                    {cmd.name}
-                  </span>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="bg-[var(--elevated)] px-2.5 py-0.5 rounded-md font-mono text-xs text-[var(--text-secondary)]">
-                      {cmd.trigger}
-                    </span>
-                    <span className="text-[var(--text-muted)] text-xs">
-                      · {(cmd.timeout || DEFAULTS.COMMAND_TIMEOUT_MS) / 1000}s
-                    </span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cmd.rateLimitType === "global" ? "bg-[var(--accent-muted)] text-[var(--accent)]" : "bg-[var(--success-muted)] text-[var(--success)]" }`}>
-                      {cmd.rateLimitType === "global" ? "Global" : "Por user"}
-                    </span>
-                  </div>
-                </div>
+              <PlusIcon className="h-4 w-4" />
+              Nuevo
+            </button>
+          </div>
+
+          {commands.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-white/10 px-6 py-16 text-center">
+              <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--accent)]">
+                <TerminalIcon className="h-5 w-5" />
               </div>
-              <div className="flex gap-2 shrink-0">
-                <button
-                  onClick={() => startEdit(cmd)}
-                  disabled={isLocked}
-                  className="px-3 py-1.5 text-xs bg-[var(--elevated)] hover:bg-[var(--border)] rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => remove(cmd.id)}
-                  disabled={isLocked}
-                  className="px-3 py-1.5 text-xs bg-red-900/50 hover:bg-red-800/70 text-red-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Eliminar
-                </button>
-              </div>
+              <p className="mt-4 text-sm font-medium text-zinc-300">Todavía no hay comandos</p>
+              <p className="mt-1 text-[13px] text-zinc-500">
+                Crea el primero para automatizar tu stream.
+              </p>
             </div>
-          ))}
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {commands.map((cmd) => (
+                <CommandCard
+                  key={cmd.id}
+                  cmd={cmd}
+                  onEdit={startEdit}
+                  onDelete={remove}
+                  onTestSound={handleTestSound}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-          <div className="amoled-card w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
-              <h3 className="text-lg font-semibold text-white">
-                {editing?.id ? "Editar comando" : "Nuevo comando"}
-              </h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          onClick={(e) => e.target === e.currentTarget && closeModal()}
+        >
+          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-white/10 bg-[var(--card)] shadow-2xl">
+            <div className="flex items-start justify-between px-6 pt-5 pb-4">
+              <div>
+                <h3 className="text-base font-semibold text-zinc-100">
+                  {editing?.id ? "Editar comando" : "Nuevo comando"}
+                </h3>
+                <p className="mt-1 text-[13px] text-zinc-500">
+                  Se ejecuta cuando alguien escribe el comando en el chat.
+                </p>
+              </div>
               <button
+                type="button"
+                title="Cerrar"
+                aria-label="Cerrar"
                 onClick={closeModal}
-                className="w-10 h-10 rounded-lg bg-[var(--elevated)] flex items-center justify-center text-[var(--text-secondary)] hover:text-white transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-white/10 hover:text-zinc-100"
               >
-                <Dismiss20Regular className="w-5 h-5" />
+                <XIcon className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-5">
-              <div className="grid grid-cols-2 gap-6">
-                {}
-                <div className="space-y-5">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-[var(--text-secondary)] font-medium">Nombre del comando</label>
+            <div className="flex-1 overflow-y-auto rawen-scrollbar border-t border-white/10 px-6 py-6">
+              <div className="flex flex-col gap-7">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <FieldLabel>Nombre</FieldLabel>
                     <input
                       type="text"
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       placeholder="Ej: Drop Gun"
-                      className="amoled-input w-full"
+                      className={inputCls}
                     />
-                    {errors.name && (
-                      <span className="text-red-400 text-sm">{errors.name}</span>
-                    )}
+                    {errors.name && <FieldError>{errors.name}</FieldError>}
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-[var(--text-secondary)] font-medium">Comando en el chat</label>
+                  <div className="space-y-2">
+                    <FieldLabel hint="Empieza con !">Comando del chat</FieldLabel>
                     <input
                       type="text"
                       value={form.trigger}
                       onChange={(e) => setForm({ ...form, trigger: e.target.value })}
                       placeholder="!dropgun"
-                      className="amoled-input w-full font-mono"
+                      className={`${inputCls} font-mono`}
                     />
-                    {errors.trigger && (
-                      <span className="text-red-400 text-sm">{errors.trigger}</span>
-                    )}
+                    {errors.trigger && <FieldError>{errors.trigger}</FieldError>}
                   </div>
+                </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-[var(--text-secondary)] font-medium">Tipo de acción</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {["key", "sound", "both"].map((type) => (
+                <div className="space-y-2">
+                  <FieldLabel>Acción</FieldLabel>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {ACTION_TYPES.map(({ value, label, hint }) => {
+                      const selected = form.actionType === value;
+                      return (
                         <button
-                          key={type}
+                          key={value}
+                          type="button"
                           onClick={() => {
-                            const nextActionType = type as "key" | "sound" | "both";
                             setForm({
                               ...form,
-                              actionType: nextActionType,
-                              key: nextActionType === "sound" ? "" : form.key,
+                              actionType: value,
+                              key: value === "sound" ? "" : form.key,
                             });
-                            if (nextActionType === "sound") {
+                            if (value === "sound") {
                               setErrors((current) => {
                                 const nextErrors = { ...current };
                                 delete nextErrors.key;
@@ -377,139 +406,172 @@ export default function CommandsPanel({
                               });
                             }
                           }}
-                          className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition-all ${
-                            form.actionType === type
-                              ? "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--accent)]"
-                              : "border-[var(--border)] bg-[var(--elevated)] text-[var(--text-secondary)] hover:border-[var(--accent-border)] hover:text-[var(--accent)]"
+                          className={`rounded-lg border p-3.5 text-left transition-colors ${
+                            selected
+                              ? "border-[var(--accent-border)] bg-[var(--accent-muted)]"
+                              : "border-white/10 hover:border-white/20 hover:bg-white/[0.03]"
                           }`}
                         >
-                          {type === "key" && <Keyboard20Filled className="w-6 h-6" />}
-                          {type === "sound" && <Speaker020Regular className="w-6 h-6" />}
-                          {type === "both" && <div className="flex items-center gap-0.5"><Keyboard20Filled className="w-5 h-5" /><Speaker020Regular className="w-5 h-5" /></div>}
-                          <span className="text-xs font-medium">
-                            {type === "key" && "Tecla"}
-                            {type === "sound" && "Sonido"}
-                            {type === "both" && "Ambos"}
+                          <span
+                            className={`flex items-center gap-2 text-[13px] font-medium ${
+                              selected ? "text-[var(--accent)]" : "text-zinc-300"
+                            }`}
+                          >
+                            <ActionGlyph type={value} className="h-4 w-4" />
+                            {label}
                           </span>
+                          <span className="mt-1 block text-[11px] text-zinc-500">{hint}</span>
                         </button>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
-
-                  {(actionType === "key" || actionType === "both") && (
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm text-[var(--text-secondary)] font-medium">Tecla a presionar</label>
-                      <input
-                        type="text"
-                        value={form.key}
-                        onChange={(e) => setForm({ ...form, key: e.target.value })}
-                        placeholder="Ej: g"
-                        maxLength={20}
-                        className="amoled-input w-full font-mono"
-                      />
-                      {errors.key && (
-                        <span className="text-red-400 text-sm">{errors.key}</span>
-                      )}
-                    </div>
-                  )}
                 </div>
 
-                {}
-                <div className="space-y-5">
-                  {(form.actionType === "sound" || form.actionType === "both") && (
-                    <div className="flex flex-col gap-3">
-                      <label className="text-sm text-[var(--text-secondary)] font-medium">Archivo de audio</label>
-                      <div className="flex flex-col gap-3">
-                        <div className="relative">
-                          <input
-                            type="file"
-                            accept=".mp3,.wav,.ogg,.m4a,audio/*"
-                            title="Selecciona un archivo de audio"
-                            onChange={(e) => {
-                              const file = e.currentTarget.files?.[0];
-                              if (file) {
-                                setAudioBlob(file);
-                                setSelectedFileName(file.name);
-                              }
-                            }}
-                            className="amoled-input w-full opacity-0 absolute inset-0 cursor-pointer"
-                          />
-                          <div className="amoled-input w-full flex items-center gap-2 px-4">
-                            <Speaker020Regular className="w-5 h-5 text-[var(--text-secondary)]" />
-                            <span className="text-sm text-[var(--text-secondary)] flex-1">
-                              {selectedFileName || "Selecciona un archivo..."}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {(audioBlob || form.soundFile) && (
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={playAudio}
-                              className="amoled-button px-4 py-2 text-xs flex items-center gap-1.5"
-                            >
-                              <Play20Regular className="w-4 h-4" />
-                              Reproducir
-                            </button>
-                            <button
-                              onClick={clearAudio}
-                              className="amoled-button-ghost px-4 py-2 text-xs flex items-center gap-1.5 text-red-400 hover:text-red-300"
-                            >
-                              <Delete20Regular className="w-4 h-4" />
-                              Eliminar
-                            </button>
-                          </div>
-                        )}
+                {(actionType === "key" || actionType === "both") && (
+                  <div className="space-y-2">
+                    <FieldLabel hint="Letras, números, space, f1-f12, arrows">
+                      Tecla a presionar
+                    </FieldLabel>
+                    <input
+                      type="text"
+                      value={form.key}
+                      onChange={(e) => setForm({ ...form, key: e.target.value })}
+                      placeholder="Ej: g"
+                      maxLength={20}
+                      className={`${inputCls} max-w-[200px] font-mono`}
+                    />
+                    {errors.key && <FieldError>{errors.key}</FieldError>}
+                  </div>
+                )}
+
+                {(actionType === "sound" || actionType === "both") && (
+                  <div className="space-y-2">
+                    <FieldLabel>Archivo de audio</FieldLabel>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept=".mp3,.wav,.ogg,.m4a,audio/*"
+                        title="Selecciona un archivo de audio"
+                        onChange={(e) => {
+                          const file = e.currentTarget.files?.[0];
+                          if (file) {
+                            setAudioBlob(file);
+                            setSelectedFileName(file.name);
+                          }
+                        }}
+                        className="absolute inset-0 z-10 w-full cursor-pointer opacity-0"
+                      />
+                      <div className="flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3.5 text-sm text-zinc-400 transition-colors hover:border-[var(--accent-border)] hover:bg-white/[0.05]">
+                        <VolumeIcon className="h-4 w-4 shrink-0 text-zinc-500" />
+                        <span className="flex-1 truncate">
+                          {selectedFileName || "Selecciona un archivo..."}
+                        </span>
+                        <span className="shrink-0 text-[11px] font-medium text-zinc-500">
+                          Examinar
+                        </span>
                       </div>
                     </div>
-                  )}
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm text-[var(--text-secondary)] font-medium">Minutos</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="59"
-                        value={timeoutMinutes}
-                        onChange={(e) => setTimeoutMinutes(Math.max(0, parseInt(e.target.value) || 0))}
-                        className="amoled-input"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm text-[var(--text-secondary)] font-medium">Segundos</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="59"
-                        value={timeoutSeconds}
-                        onChange={(e) => setTimeoutSeconds(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                        className="amoled-input"
-                      />
+                    {(audioBlob || form.soundFile) && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={playAudio}
+                          className={`${btnPrimary} !h-8 !px-3 text-xs`}
+                        >
+                          <PlayIcon className="h-3.5 w-3.5" />
+                          Reproducir
+                        </button>
+                        <button
+                          type="button"
+                          onClick={clearAudio}
+                          className="inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-zinc-400 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                        >
+                          <TrashIcon className="h-3.5 w-3.5" />
+                          Quitar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <FieldLabel hint="Entre activaciones">Cooldown</FieldLabel>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          min={0}
+                          max={59}
+                          value={timeoutMinutes}
+                          onChange={(e) =>
+                            setTimeoutMinutes(Math.max(0, parseInt(e.target.value) || 0))
+                          }
+                          className={`${inputCls} pr-10 text-center font-mono`}
+                        />
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] uppercase text-zinc-600">
+                          min
+                        </span>
+                      </div>
+                      <span className="font-medium text-zinc-600">:</span>
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          min={0}
+                          max={59}
+                          value={timeoutSeconds}
+                          onChange={(e) =>
+                            setTimeoutSeconds(
+                              Math.max(0, Math.min(59, parseInt(e.target.value) || 0))
+                            )
+                          }
+                          className={`${inputCls} pr-10 text-center font-mono`}
+                        />
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] uppercase text-zinc-600">
+                          seg
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-[var(--text-secondary)] font-medium">Rate Limit</label>
-                    <Dropdown
-                      options={[
-                        { value: "per-user", label: "Por usuario" },
-                        { value: "global", label: "Global" },
-                      ]}
-                      value={form.rateLimitType || "per-user"}
-                      onChange={(v) => setForm({ ...form, rateLimitType: v as "global" | "per-user" })}
-                    />
+                  <div className="space-y-2">
+                    <FieldLabel hint="Quién comparte el cooldown">Rate limit</FieldLabel>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(
+                        [
+                          { value: "per-user", label: "Por usuario" },
+                          { value: "global", label: "Global" },
+                        ] as const
+                      ).map(({ value, label }) => {
+                        const selected = (form.rateLimitType || "per-user") === value;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setForm({ ...form, rateLimitType: value })}
+                            className={`h-10 rounded-lg border px-3 text-[13px] font-medium transition-colors ${
+                              selected
+                                ? "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--accent)]"
+                                : "border-white/10 text-zinc-400 hover:border-white/20 hover:text-zinc-200"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-[var(--border)] flex gap-3">
-              <button onClick={closeModal} className="flex-1 py-3 amoled-button-ghost text-sm font-medium">
+            <div className="flex justify-end gap-2 border-t border-white/10 px-6 py-4">
+              <button type="button" onClick={closeModal} className={btnGhost}>
                 Cancelar
               </button>
-              <button onClick={save} className="flex-1 py-3 amoled-button text-sm font-medium">
-                Guardar
+              <button type="button" onClick={save} className={btnPrimary}>
+                {editing?.id ? "Guardar cambios" : "Crear comando"}
               </button>
             </div>
           </div>

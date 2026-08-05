@@ -9,6 +9,7 @@ interface ConnectScreenProps {
   platform: ChatPlatform;
   onChannelInputChange: (value: string) => void;
   onConnect: () => void;
+  onOpenOverlay: () => void;
   onPlatformChange: (platform: ChatPlatform) => void;
 }
 
@@ -25,6 +26,7 @@ export default function ConnectScreen({
   platform,
   onChannelInputChange,
   onConnect,
+  onOpenOverlay,
   onPlatformChange,
 }: ConnectScreenProps) {
   return (
@@ -100,6 +102,14 @@ export default function ConnectScreen({
               className="amoled-button w-full py-3"
             >
               Conectar a {getPlatformDisplayName(platform)}
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenOverlay}
+              className="amoled-button-ghost w-full py-3"
+            >
+              Abrir editor de overlays
             </button>
 
             <a

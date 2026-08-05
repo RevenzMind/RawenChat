@@ -5,8 +5,10 @@
   "main": "electron-dist/main.js",
   "scripts": {
     "dev": "next dev --turbopack",
+    "bridge": "node server.js",
+    "dev:web": "concurrently -n bridge,next -c yellow,cyan \"node server.js\" \"next dev --turbopack\"",
     "electron:watch": "tsc -p electron/tsconfig.json --watch",
-    "electron:dev": "concurrently \"tsc -p electron/tsconfig.json --watch\" \"next dev --turbopack\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:dev": "concurrently \"tsc -p electron/tsconfig.json --watch\" \"next dev --turbopack\" \"wait-on http-get://localhost:3000 && electron .\"",
     "electron:compile": "tsc -p electron/tsconfig.json",
     "electron:build": "next build && tsc -p electron/tsconfig.json && electron-builder",
     "release": "node scripts/release.js",
@@ -59,8 +61,10 @@
     "next": "16.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-rnd": "^10.5.3",
     "tmi.js": "^1.8.5",
-    "ws": "^8.21.0"
+    "ws": "^8.21.0",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

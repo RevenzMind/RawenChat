@@ -1,4 +1,6 @@
-export const AVATAR_WS_URL = "ws://127.0.0.1:3002";
+import { BRIDGE_CHANNELS } from "@/utils/socket";
+
+export const AVATAR_WS_URL = BRIDGE_CHANNELS.avatar;
 
 export const AVATAR_STORAGE_KEYS = {
   MIC_ID: "avatar-mic-id",

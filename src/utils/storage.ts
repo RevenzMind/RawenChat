@@ -16,3 +16,12 @@ export function saveToStorage<T>(key: string, data: T): void {
     console.error("Error guardando en localStorage");
   }
 }
+
+export function removeFromStorage(key: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    console.error("Error eliminando datos de localStorage");
+  }
+}

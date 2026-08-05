@@ -2,10 +2,12 @@
 
 import {
   Chat20Regular,
-  Settings20Filled,
-  PersonAccounts20Regular,
+  Bot20Regular,
+  Person20Regular,
   Home20Regular,
-  ArrowSyncCircle20Regular,
+  ArrowDownload20Regular,
+  Layer20Regular,
+  Settings20Filled,
 } from "@fluentui/react-icons";
 import type { SidebarTab } from "../../types/chat";
 
@@ -19,9 +21,15 @@ interface SidebarProps {
 
 const NAV_ITEMS: { tab: SidebarTab; icon: typeof Chat20Regular; label: string }[] = [
   { tab: "chat", icon: Chat20Regular, label: "Chat" },
-  { tab: "commands", icon: Settings20Filled, label: "Comandos" },
-  { tab: "avatar", icon: PersonAccounts20Regular, label: "Avatar" },
+  { tab: "commands", icon: Bot20Regular, label: "Comandos" },
+  { tab: "avatar", icon: Person20Regular, label: "Avatar" },
 ];
+
+const OVERLAY_ITEM = {
+  tab: "overlay" as const,
+  icon: Layer20Regular,
+  label: "Editor de overlays",
+};
 
 export default function Sidebar({
   channel,
@@ -42,7 +50,12 @@ export default function Sidebar({
       <div className="rail-divider" />
 
       {!channel ? (
-        <button className="rail-btn rail-btn-active" title="Inicio">
+        <button
+          type="button"
+          onClick={() => setActiveTab("chat")}
+          className={`rail-btn ${activeTab !== "overlay" ? "rail-btn-active" : ""}`}
+          title="Inicio"
+        >
           <Home20Regular className="w-5 h-5" />
         </button>
       ) : (
@@ -50,6 +63,7 @@ export default function Sidebar({
           {NAV_ITEMS.map(({ tab, icon: Icon, label }) => (
             <button
               key={tab}
+              type="button"
               onClick={() => setActiveTab(tab)}
               className={`rail-btn ${activeTab === tab ? "rail-btn-active" : ""}`}
               title={label}
@@ -60,19 +74,30 @@ export default function Sidebar({
         </>
       )}
 
+      <button
+        type="button"
+        onClick={() => setActiveTab(OVERLAY_ITEM.tab)}
+        className={`rail-btn ${activeTab === OVERLAY_ITEM.tab ? "rail-btn-active" : ""}`}
+        title={OVERLAY_ITEM.label}
+      >
+        <OVERLAY_ITEM.icon className="w-5 h-5" />
+      </button>
+
       <div className="rail-spacer" />
 
       <div className="rail-divider" />
 
       <button
+        type="button"
         onClick={() => setIsUpdateModalOpen(true)}
         className="rail-btn"
         title="Actualizaciones"
       >
-        <ArrowSyncCircle20Regular className="w-5 h-5" />
+        <ArrowDownload20Regular className="w-5 h-5" />
       </button>
 
       <button
+        type="button"
         onClick={() => setIsModalOpen(true)}
         className="rail-btn"
         title="Configuración"

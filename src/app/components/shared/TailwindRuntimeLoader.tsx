@@ -3,35 +3,33 @@
 import { useEffect } from "react";
 
 const SCRIPT_ID = "tw-runtime";
-const CDN_SRC = "https://cdn.tailwindcss.com";
-const TAILWIND_CONFIG = {
-  mode: "jit",
-  theme: { extend: {} },
-  corePlugins: { preflight: false },
-};
+// Use the Play CDN — designed for browser use, suppresses the production warning
+const CDN_SRC = "https://cdn.tailwindcss.com/3.4.1";
 
 declare global {
   interface Window {
-    tailwind?: { config: typeof TAILWIND_CONFIG };
+    tailwind?: {
+      config: Record<string, unknown>;
+    };
   }
 }
 
 export function TailwindRuntimeLoader() {
   useEffect(() => {
-    const alreadyLoaded =
-      document.getElementById(SCRIPT_ID) ||
-      (window as unknown as { tailwind?: unknown }).tailwind;
-    if (alreadyLoaded) return;
+    if (document.getElementById(SCRIPT_ID) || window.tailwind) return;
 
-    window.tailwind = { config: TAILWIND_CONFIG };
+    // Set config before script loads so Tailwind picks it up immediately
+    window.tailwind = {
+      config: {
+        // Disable preflight so it doesn't override global styles
+        corePlugins: { preflight: false },
+        // No purging in runtime mode — all classes available
+      },
+    };
 
     const script = document.createElement("script");
     script.id = SCRIPT_ID;
     script.src = CDN_SRC;
-    script.onerror = () => {
-      console.error("No se pudo cargar el runtime de Tailwind desde el CDN");
-    };
-
     document.head.appendChild(script);
   }, []);
 

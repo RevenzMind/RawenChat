@@ -25,10 +25,15 @@ declare global {
         dataUrl: string,
       ) => Promise<{ url: string; fileName: string }>;
       saveAvatarSettings: (settings: unknown) => Promise<void>;
+      saveOverlayAsset: (
+        fileName: string,
+        dataUrl: string,
+      ) => Promise<{ url: string; fileName: string }>;
       getAvatarSettings: () => Promise<unknown | null>;
       saveObsComponent: (componentCode: string) => Promise<void>;
       getObsComponent: () => Promise<string | null>;
-      
+      openExternal: (url: string) => Promise<void>;
+
       getDiagnostics: () => Promise<{ isElectron: true; version: string }>;
       
       checkForUpdates: () => Promise<{ success: boolean; message?: string }>;

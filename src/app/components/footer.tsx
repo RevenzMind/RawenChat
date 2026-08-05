@@ -1,9 +1,24 @@
-import { FluentEmoji } from "@lobehub/fluent-emoji";
-
 interface FooterProps {
   IsConnected: boolean;
   channel: string | undefined;
   MessageCount: number;
+}
+
+function IconChat({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+function IconLink({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </svg>
+  );
 }
 
 export default function Footer({
@@ -24,11 +39,11 @@ export default function Footer({
 
       <div className="flex items-center gap-4 text-[var(--text-muted)]">
         <span className="flex items-center gap-1.5">
-          <FluentEmoji type="anim" size={14} emoji="💬" />
+          <IconChat className="w-3.5 h-3.5" />
           {MessageCount} mensajes
         </span>
         <span className="flex items-center gap-1.5 max-w-[180px] truncate">
-          <FluentEmoji type="anim" size={14} emoji="🔗" />
+          <IconLink className="w-3.5 h-3.5 shrink-0" />
           {channel || "—"}
         </span>
       </div>

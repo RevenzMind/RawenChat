@@ -37,6 +37,7 @@ electron-dist
 *.swp
 *.swo
 *~
+.qoder
 
 # OS
 .DS_Store
