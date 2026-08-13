@@ -1,6 +1,6 @@
 {
   "name": "twitch-rawen",
-  "version": "2.2.3",
+  "version": "3.0.0",
   "private": true,
   "main": "electron-dist/main.js",
   "scripts": {

@@ -29,7 +29,13 @@ function readJsonFile(p) {
 }
 function writeJsonFile(p, data) {
   ensureDataDir();
-  fs.writeFileSync(p, JSON.stringify(data), 'utf8');
+  // Write through a temporary file and retain the previous valid snapshot.
+  // This prevents a crash during write from leaving an empty/corrupt scene file.
+  const temp = `${p}.tmp`;
+  const backup = `${p}.bak`;
+  fs.writeFileSync(temp, JSON.stringify(data, null, 2), 'utf8');
+  if (fs.existsSync(p)) fs.copyFileSync(p, backup);
+  fs.renameSync(temp, p);
 }
 
 ensureDataDir();

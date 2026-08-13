@@ -150,19 +150,27 @@ export const useOverlayEditorStore = create<OverlayEditorState>((set, get) => ({
       readOverlaySettingsFromServer(),
       readOverlaySceneRecordFromServer(),
     ]).then(([remoteSettings, remoteRecord]) => {
-      const remoteActiveAt = remoteSettings
-        ? Math.max(
-            ...remoteSettings.scenes.map((s) => Date.parse(s.updatedAt) || 0)
-          )
-        : 0;
-      const localActiveAt = Math.max(
-        ...localSettings.scenes.map((s) => Date.parse(s.updatedAt) || 0)
-      );
-
       let finalSettings = localSettings;
 
-      if (remoteSettings && remoteActiveAt > localActiveAt) {
-        finalSettings = remoteSettings;
+      if (remoteSettings) {
+        // Merge per scene instead of replacing the complete list. A different
+        // scene being newer must not make locally-created scenes disappear.
+        const localById = new Map(localSettings.scenes.map((s) => [s.id, s]));
+        const merged = [...localSettings.scenes];
+        for (const remoteScene of remoteSettings.scenes) {
+          const localScene = localById.get(remoteScene.id);
+          const remoteAt = Date.parse(remoteScene.updatedAt) || 0;
+          const localAt = localScene ? Date.parse(localScene.updatedAt) || 0 : 0;
+          if (!localScene || remoteAt >= localAt) {
+            const index = merged.findIndex((s) => s.id === remoteScene.id);
+            if (index >= 0) merged[index] = remoteScene;
+            else merged.push(remoteScene);
+          }
+        }
+        const activeSceneId = remoteSettings.scenes.some((s) => s.id === remoteSettings.activeSceneId)
+          ? remoteSettings.activeSceneId
+          : localSettings.activeSceneId;
+        finalSettings = buildSettings(merged, activeSceneId);
       } else if (remoteRecord) {
         // Server has a single scene record but no full settings — merge in
         const remoteUpdatedAt = Date.parse(remoteRecord.scene.updatedAt) || 0;
